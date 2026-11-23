@@ -96,6 +96,11 @@ button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer
 .st-top .ttl{flex:1;text-align:center;font-size:19px}
 .st-prev{flex:none;display:flex;justify-content:center;padding:4px 0 6px}
 .st-prev canvas{width:min(68vw,40vh,330px);height:min(68vw,40vh,330px);background:repeating-conic-gradient(#efe9f6 0 25%,#fff 0 50%) 0 0/22px 22px;border-radius:24px;touch-action:none;box-shadow:0 10px 30px #8b7cff1c}
+.st-wrap{position:relative}
+.ai-busy{position:absolute;inset:0;border-radius:24px;background:#ffffffcc;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-size:15px;color:var(--ink);text-align:center;line-height:1.4}
+.ai-busy.on{display:flex}
+.spin{width:42px;height:42px;border-radius:50%;border:4px solid #eadff7;border-top-color:var(--pink);animation:sp 0.9s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
 .st-tip{text-align:center;font-size:12px;color:var(--sub);margin-bottom:4px}
 .st-ctrl{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 14px 10px;display:flex;flex-direction:column;gap:12px}
 .grp .lab{font-size:14px;color:var(--sub);margin:0 0 6px 4px}
@@ -198,7 +203,7 @@ input[type=range]{width:100%;accent-color:var(--pink)}
     <div class="ttl">이모티콘 만들기</div>
     <button class="ibtn" id="sRandom" aria-label="랜덤">🎲</button>
   </div>
-  <div class="st-prev"><canvas id="scv" width="512" height="512"></canvas></div>
+  <div class="st-prev"><div class="st-wrap"><canvas id="scv" width="512" height="512"></canvas><div class="ai-busy" id="aiBusy"><div class="spin"></div><div id="aiMsg">AI가 그림으로 바꾸는 중…</div></div></div></div>
   <div class="st-tip">사진을 드래그해서 위치 조정 · 두 손가락으로 확대</div>
   <div class="st-ctrl">
     <div class="grp"><div class="lab">모양</div><div class="hs" id="oShape"></div></div>
@@ -658,7 +663,7 @@ $('mkSticker').onclick = () => { $('doneModal').classList.remove('on'); openStic
 
 /* ================= STICKER ================= */
 const SHAPES = [['circle','⚪ 동그라미'],['heart','💗 하트'],['flower','🌸 꽃'],['round','⬜ 둥근네모'],['star','⭐ 별']];
-const FILTERS = [['none','원본'],['cartoon','만화'],['pastel','파스텔'],['pop','팝 컬러'],['warm','따뜻한'],['mono','흑백']];
+const FILTERS = [['none','원본'],['anime','🎨 애니 수채화 (AI)'],['cartoon','만화'],['pastel','파스텔'],['pop','팝 컬러'],['warm','따뜻한'],['mono','흑백']];
 const PRESETS = ['최고!','고마워','사랑해','축하해','ㅋㅋㅋ','굿굿','화이팅!','보고싶어','미안해','오케이'];
 const COLORS = ['#ff4f8b','#7b61ff','#ff8a00','#18b26b','#1e90ff','#3b3054','#ffffff'];
 const DECOS = [['none','없음'],['hearts','💕 하트'],['sparkle','✨ 반짝'],['flowers','🌼 꽃'],['stars','⭐ 별'],['music','🎵 음표'],['party','🎉 파티']];
@@ -727,9 +732,54 @@ function boxBlur(src, w, h, r){
   for(let i = 3; i < src.length; i += 4) out[i] = src[i];
   return out;
 }
+/* ---- AI anime-painting filter (AnimeGANv3, runs on the phone) ---- */
+let aiSession = null, aiLoading = null, aiRunning = false;
+function loadScript(src){ return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = () => rej(new Error('script')); document.head.appendChild(el); }); }
+function getAI(){
+  if(aiSession) return Promise.resolve(aiSession);
+  if(!aiLoading){
+    aiLoading = (async () => {
+      if(!window.ort) await loadScript('ai/ort.wasm.min.js');
+      ort.env.wasm.wasmPaths = new URL('ai/', location.href).href;
+      ort.env.wasm.numThreads = 1;
+      aiSession = await ort.InferenceSession.create('ai/anime_hayao.onnx', {executionProviders: ['wasm'], graphOptimizationLevel: 'all'});
+      return aiSession;
+    })().catch(e => { aiLoading = null; throw e; });
+  }
+  return aiLoading;
+}
+const nextFrame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
+async function runAnime(){
+  if(aiRunning) return; aiRunning = true;
+  const busy = $('aiBusy');
+  $('aiMsg').innerHTML = aiSession ? 'AI가 그림으로 바꾸는 중…' : 'AI 준비 중… (처음 한 번만 약 16MB 다운로드)';
+  busy.classList.add('on');
+  try{
+    const sess = await getAI();
+    $('aiMsg').textContent = 'AI가 그림으로 바꾸는 중… (몇 초 걸려요)';
+    await nextFrame();
+    const k = Math.min(1, 640 / Math.max(fBase.width, fBase.height));
+    const W = Math.max(64, Math.round(fBase.width * k / 8) * 8), H = Math.max(64, Math.round(fBase.height * k / 8) * 8);
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const g = c.getContext('2d'); g.drawImage(fBase, 0, 0, W, H);
+    const id = g.getImageData(0, 0, W, H), d = id.data, inp = new Float32Array(W * H * 3);
+    for(let i = 0, j = 0; i < d.length; i += 4, j += 3){ inp[j] = d[i] / 127.5 - 1; inp[j + 1] = d[i + 1] / 127.5 - 1; inp[j + 2] = d[i + 2] / 127.5 - 1; }
+    const out = await sess.run({[sess.inputNames[0]]: new ort.Tensor('float32', inp, [1, H, W, 3])});
+    const y = out[sess.outputNames[0]].data;
+    for(let i = 0, j = 0; i < d.length; i += 4, j += 3){ d[i] = (y[j] + 1) * 127.5; d[i + 1] = (y[j + 1] + 1) * 127.5; d[i + 2] = (y[j + 2] + 1) * 127.5; d[i + 3] = 255; }
+    g.putImageData(id, 0, 0);
+    fCache.anime = c;
+  }catch(e){
+    toast('AI 변환을 할 수 없어요. 인터넷 연결을 확인해 주세요');
+    if(ST.filter === 'anime'){ ST.filter = 'none'; buildControls(); }
+  }finally{
+    busy.classList.remove('on'); aiRunning = false; drawSticker();
+  }
+}
 function filtered(name){
   if(name === 'none') return fBase;
   if(fCache[name]) return fCache[name];
+  if(name === 'anime'){ runAnime(); return fBase; }
   const w = fBase.width, h = fBase.height;
   const c = document.createElement('canvas'); c.width = w; c.height = h;
   const g = c.getContext('2d'); g.drawImage(fBase, 0, 0);
@@ -879,7 +929,7 @@ scv.addEventListener('touchstart', e => e.preventDefault(), {passive: false});
 
 $('sRandom').onclick = () => {
   const pick = a => a[Math.floor(Math.random() * a.length)];
-  ST.shape = pick(SHAPES)[0]; ST.filter = pick(FILTERS)[0]; ST.deco = pick(DECOS.slice(1))[0];
+  ST.shape = pick(SHAPES)[0]; ST.filter = pick(FILTERS.filter(f => f[0] !== 'anime' || fCache.anime))[0]; ST.deco = pick(DECOS.slice(1))[0];
   ST.text = pick(PRESETS); ST.color = pick(COLORS.slice(0, 6));
   buildControls(); drawSticker();
 };
