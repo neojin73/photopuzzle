@@ -61,6 +61,33 @@ button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer
 .btn.ghost{background:#fff;color:var(--ink);box-shadow:0 6px 16px #8b7cff18}
 .rec{color:var(--sub);font-size:13px;text-align:center}
 
+.hcol{display:flex;flex-direction:column;gap:18px}
+
+/* ---------- RESPONSIVE: tablets, landscape, PC ---------- */
+@media (min-width:700px){
+  .home-wrap{max-width:640px;padding-top:34px}
+  .logo h1{font-size:36px}
+  .chip{padding:14px 4px;font-size:17px}
+}
+@media (min-width:860px) and (min-aspect-ratio:1/1), (min-width:1000px){
+  .home-wrap{max-width:1040px;display:grid;grid-template-columns:1.1fr 1fr;gap:24px;align-items:start}
+  .home-wrap .logo{grid-column:1 / -1}
+  .picker{aspect-ratio:auto;height:min(58vh,560px)}
+}
+@media (orientation:landscape) and (max-height:520px){
+  /* phone held sideways */
+  .home-wrap{max-width:900px;display:grid;grid-template-columns:1fr 1fr;gap:14px;padding-top:10px}
+  .home-wrap .logo{grid-column:1 / -1}
+  .picker{aspect-ratio:auto;height:62vh}
+  .topbar{height:46px}
+}
+.sheet{margin:0 auto}
+@media (min-width:700px){
+  .modal{align-items:center}
+  .sheet{border-radius:28px;max-width:560px;padding-bottom:22px}
+  .sheet .thumb{max-height:40vh}
+}
+
 /* ---------- GAME ---------- */
 #game{background:linear-gradient(180deg,#fdf6fb,#efeafc)}
 .topbar{height:54px;display:flex;align-items:center;gap:6px;padding:0 10px;flex:none}
@@ -114,6 +141,21 @@ button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer
 .txt:focus{outline:none;border-color:var(--pink2)}
 input[type=range]{width:100%;accent-color:var(--pink)}
 .st-bot{flex:none;padding:8px 14px 10px;display:grid;grid-template-columns:1fr 2fr;gap:10px}
+@media (min-width:700px){
+  .st-prev canvas{width:min(60vw,46vh,480px);height:min(60vw,46vh,480px)}
+  .st-ctrl{max-width:720px;width:100%;margin:0 auto}
+  .st-bot{max-width:720px;width:100%;margin:0 auto}
+}
+@media (min-aspect-ratio:5/4) and (min-width:560px){
+  /* wide: preview on the left, controls on the right */
+  #sticker.on{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto 1fr auto auto;grid-template-areas:"top top" "prev ctrl" "tip ctrl" "bot bot"}
+  .st-top{grid-area:top}
+  .st-prev{grid-area:prev;align-items:center;padding:0}
+  .st-tip{grid-area:tip}
+  .st-ctrl{grid-area:ctrl;max-width:none;min-height:0}
+  .st-bot{grid-area:bot;max-width:none}
+  .st-prev canvas{width:min(44vw,70vh,560px);height:min(44vw,70vh,560px)}
+}
 .toast{position:fixed;left:50%;top:calc(70px + var(--sat));transform:translateX(-50%);background:#3b3054e6;color:#fff;padding:10px 16px;border-radius:99px;font-size:15px;z-index:50;opacity:0;transition:.25s;pointer-events:none}
 .toast.on{opacity:1}
 </style>
@@ -128,6 +170,7 @@ input[type=range]{width:100%;accent-color:var(--pink)}
       <div><h1>포토 퍼즐</h1><p>내 사진으로 퍼즐 맞추고 이모티콘 만들기</p></div>
     </div>
 
+    <div class="hcol">
     <div class="card" id="resumeCard" style="display:none">
       <div style="display:flex;gap:12px;align-items:center">
         <img id="resumeImg" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:14px;flex:none">
@@ -145,6 +188,8 @@ input[type=range]{width:100%;accent-color:var(--pink)}
       <span class="change" id="chg" style="display:none">사진 바꾸기</span>
       <input type="file" id="file" accept="image/*">
     </label>
+    </div>
+    <div class="hcol">
 
     <div class="card">
       <h3>퍼즐 크기 <small id="sizeInfo">-</small></h3>
@@ -165,6 +210,7 @@ input[type=range]{width:100%;accent-color:var(--pink)}
     <button class="btn" id="startBtn" disabled>🧩 퍼즐 시작하기</button>
     <div class="rec" id="rec"></div>
     <div class="rec" id="ver" style="opacity:.6;font-size:12px"></div>
+    </div>
   </div>
 </section>
 
@@ -302,7 +348,7 @@ const UA = navigator.userAgent || '';
 const IS_ANDROID = /Android/i.test(UA);
 const IS_IOS = /iPhone|iPad|iPod/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const STANDALONE = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
-const APP_VER = 'v6 (2026-11-23)';
+const APP_VER = 'v7 (2026-11-23)';
 const IN_APP = /KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|FB_IAB|Line\/|DaumApps|everytimeApp|; wv\)/i.test(UA);
 const buzz = p => { try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} };
 const store = {
@@ -470,7 +516,7 @@ const W0 = 1000;                // puzzle width in units
 let H0 = 1000, cols = 4, rows = 4, cw = 250, ch = 250, m = 250, pad = 75;
 let pieces = [], order = [], placed = 0, hT = [], vT = [];
 let G = {kids: false, rot: false, n: 16};
-let L = {w:0, h:0, s:1, bx:0, by:0, trayTop:0};
+let L = {w:0, h:0, s:1, bx:0, by:0, tray:{x:0, y:0, w:0, h:0}, land:false};
 let drag = null, dirty = true, playing = false, startT = 0, elapsed = 0, timerI = null, moves = 0;
 let boardImg = null;  // canvas scaled for board
 let celebrate = 0, confetti = [];
@@ -565,16 +611,32 @@ function layout(first){
   const w = rect.width, h = rect.height;
   if(!w || !h) return;
   cv.width = Math.round(w * DPR); cv.height = Math.round(h * DPR);
-  const s = Math.min((w - 24) / W0, (h * (G.kids ? 0.5 : 0.52)) / H0);
   const old = L;
-  L = {w, h, s, bx: (w - W0 * s) / 2, by: 14, trayTop: 14 + H0 * s + 14};
+  // wide screens (tablet/phone landscape, PC): board on the left, piece tray on the right
+  const land = w > h * 1.15 && w >= 560;
+  let s, bx, by, tray;
+  if(land){
+    s = Math.min((w * (G.kids ? 0.56 : 0.6) - 24) / W0, (h - 28) / H0);
+    bx = 14; by = Math.max(14, (h - H0 * s) / 2);
+    const tx = bx + W0 * s + 18;
+    tray = {x: tx, y: 8, w: w - tx - 8, h: h - 16};
+  } else {
+    s = Math.min((w - 24) / W0, (h * (G.kids ? 0.5 : 0.52)) / H0);
+    bx = (w - W0 * s) / 2; by = 14;
+    const ty = by + H0 * s + 10;
+    tray = {x: 6, y: ty, w: w - 12, h: h - ty - 4};
+  }
+  L = {w, h, s, bx, by, tray, land};
   boardImg = document.createElement('canvas');
   boardImg.width = Math.round(W0 * s * DPR); boardImg.height = Math.round(H0 * s * DPR);
   const bctx = boardImg.getContext('2d');
   bctx.imageSmoothingQuality = 'high';
   bctx.drawImage(srcImg, 0, 0, boardImg.width, boardImg.height);
   renderPieces();
-  if(!first && old.w) pieces.forEach(clampPiece);
+  if(!first && old.w){
+    if(old.land !== L.land) scatter(pieces.filter(p => !p.locked));   // orientation changed → re-deal loose pieces into the new tray
+    pieces.forEach(clampPiece);
+  }
   dirty = true;
 }
 function renderPieces(){
@@ -599,9 +661,10 @@ function renderPieces(){
   });
 }
 function trayBox(){
-  const x0 = (8 + pad * L.s * 0.6 - L.bx) / L.s, x1 = (L.w - 8 - L.bx) / L.s - cw - pad * 0.6;
-  const y0 = (L.trayTop + pad * L.s * 0.6 - L.by) / L.s;
-  let y1 = (L.h - 8 - L.by) / L.s - ch - pad * 0.6;
+  const T = L.tray, e = pad * L.s * 0.6 + 4;
+  const x0 = (T.x + e - L.bx) / L.s, x1 = (T.x + T.w - 4 - L.bx) / L.s - cw - pad * 0.6;
+  const y0 = (T.y + e - L.by) / L.s;
+  let y1 = (T.y + T.h - 4 - L.by) / L.s - ch - pad * 0.6;
   if(y1 < y0) y1 = y0;
   return {x0, x1: Math.max(x0, x1), y0, y1};
 }
@@ -770,7 +833,7 @@ function frame(now){
     for(let r = 1; r < rows; r++){ const y = L.by + r * ch * L.s; ctx.moveTo(L.bx, y); ctx.lineTo(L.bx + bw, y); }
     ctx.stroke();
   }
-  ctx.fillStyle = 'rgba(139,124,255,.06)'; rr(ctx, 6, L.trayTop - 4, L.w - 12, L.h - L.trayTop - 2, 16); ctx.fill();
+  ctx.fillStyle = 'rgba(139,124,255,.06)'; rr(ctx, L.tray.x, L.tray.y, L.tray.w, L.tray.h, 16); ctx.fill();
 
   if(celebrate){
     ctx.drawImage(boardImg, L.bx, L.by, bw, bh);
