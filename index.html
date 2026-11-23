@@ -128,6 +128,17 @@ input[type=range]{width:100%;accent-color:var(--pink)}
       <div><h1>포토 퍼즐</h1><p>내 사진으로 퍼즐 맞추고 이모티콘 만들기</p></div>
     </div>
 
+    <div class="card" id="resumeCard" style="display:none">
+      <div style="display:flex;gap:12px;align-items:center">
+        <img id="resumeImg" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:14px;flex:none">
+        <div style="flex:1;min-width:0"><div style="font-size:17px">하던 퍼즐이 있어요</div><div id="resumeInfo" style="color:var(--sub);font-size:13px;margin-top:2px"></div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-top:12px">
+        <button class="btn" id="resumeGo" style="height:46px;font-size:17px">▶ 이어하기</button>
+        <button class="btn ghost" id="resumeDel" style="height:46px;font-size:15px">지우기</button>
+      </div>
+    </div>
+
     <label class="picker" id="picker">
       <div class="ph" id="ph"><span class="big">📷</span>여기를 눌러<br>갤러리에서 사진을 고르세요</div>
       <img id="pickImg" alt="" style="display:none">
@@ -143,6 +154,8 @@ input[type=range]{width:100%;accent-color:var(--pink)}
     <div class="card">
       <div class="row"><span>판에 흐린 밑그림 보이기</span><button class="switch on" id="swGuide" aria-label="밑그림"></button></div>
       <div class="row"><span>효과음</span><button class="switch on" id="swSound" aria-label="효과음"></button></div>
+      <div class="row"><span>👶 어린이 모드<br><small style="color:var(--sub);font-size:12px">큰 조각 · 조각 모양 표시 · 쉽게 맞춰져요</small></span><button class="switch" id="swKids" aria-label="어린이 모드"></button></div>
+      <div class="row"><span>🔄 조각 회전 (어렵게)<br><small style="color:var(--sub);font-size:12px">조각이 돌아가 있어요 · 톡 누르면 회전</small></span><button class="switch" id="swRot" aria-label="회전"></button></div>
     </div>
 
     <div class="card" id="installCard" style="display:none">
@@ -165,6 +178,7 @@ input[type=range]{width:100%;accent-color:var(--pink)}
     <button class="ibtn" id="gPeek" aria-label="미리보기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
   </div>
   <div class="progress"><i id="gBar"></i></div>
+  <div id="gRotHint" style="display:none;text-align:center;font-size:12px;color:var(--sub);margin-top:4px">조각을 톡 누르면 90° 회전 · 바르게 돌려야 맞춰져요</div>
   <div id="stage">
     <canvas id="cv"></canvas>
     <div id="peek"><img id="peekImg" alt=""></div>
@@ -174,7 +188,7 @@ input[type=range]{width:100%;accent-color:var(--pink)}
 <!-- DONE MODAL -->
 <div class="modal" id="doneModal">
   <div class="sheet">
-    <h2>🎉 완성!</h2>
+    <h2 id="doneTitle">🎉 완성!</h2>
     <div class="sub" id="doneInfo"></div>
     <img class="thumb" id="doneImg" alt="">
     <button class="btn" id="mkSticker">✨ 이 사진으로 이모티콘 만들기</button>
@@ -189,7 +203,7 @@ input[type=range]{width:100%;accent-color:var(--pink)}
 <div class="modal" id="exitModal">
   <div class="sheet">
     <h2>그만할까요?</h2>
-    <div class="sub">진행 중인 퍼즐은 저장되지 않아요</div>
+    <div class="sub">진행 상황은 저장돼요. 처음 화면에서 이어할 수 있어요</div>
     <div class="two">
       <button class="btn ghost" id="exitNo">계속하기</button>
       <button class="btn" id="exitYes">나가기</button>
@@ -212,6 +226,10 @@ input[type=range]{width:100%;accent-color:var(--pink)}
     <div class="grp"><div class="lab">문구</div>
       <input class="txt" id="oText" maxlength="12" placeholder="문구 입력 (비워두면 없음)">
       <div class="hs" id="oTextPre" style="margin-top:8px"></div>
+    </div>
+    <div class="grp"><div class="lab">🎁 세트로 만들기 (문구만 다르게 여러 장)</div>
+      <input class="txt" id="oSet" maxlength="60" value="고마워, 사랑해, 최고!, ㅋㅋㅋ">
+      <button class="btn ghost" id="mkSet" style="height:46px;font-size:16px;margin-top:8px;width:100%">🎁 세트 만들기 (쉼표로 구분, 최대 6장)</button>
     </div>
     <div class="grp"><div class="lab">글자 색</div><div class="hs" id="oColor"></div></div>
     <div class="grp"><div class="lab">꾸미기</div><div class="hs" id="oDeco"></div></div>
@@ -237,6 +255,22 @@ input[type=range]{width:100%;accent-color:var(--pink)}
     <button class="btn ghost" id="cSave">💾 파일로 다운로드</button>
     <div class="hint" id="cHint" style="font-size:13px">버튼이 안 되면 위 이미지를 <b>길게 눌러</b> 저장하세요.</div>
     <button class="btn ghost" id="cClose" style="height:44px;font-size:16px">닫기</button>
+  </div>
+</div>
+
+<!-- SET SHEET -->
+<div class="modal" id="setModal">
+  <div class="sheet" style="gap:10px;max-height:92vh;overflow-y:auto">
+    <h2>🎁 이모티콘 세트</h2>
+    <div id="setGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
+    <div class="hs" id="setFmt" style="justify-content:center">
+      <button class="opt on" data-f="jpg">사진 (JPG)</button>
+      <button class="opt" data-f="png">투명 배경 (PNG)</button>
+    </div>
+    <button class="btn" id="setShare">📤 모두 공유 · 저장</button>
+    <button class="btn ghost" id="setDl">💾 모두 다운로드</button>
+    <div class="hint" style="font-size:13px">한 장씩 저장하려면 이미지를 <b>길게 눌러</b> 저장하세요.</div>
+    <button class="btn ghost" id="setClose" style="height:44px;font-size:16px">닫기</button>
   </div>
 </div>
 
@@ -268,7 +302,7 @@ const UA = navigator.userAgent || '';
 const IS_ANDROID = /Android/i.test(UA);
 const IS_IOS = /iPhone|iPad|iPod/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const STANDALONE = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
-const APP_VER = 'v5 (2026-11-23)';
+const APP_VER = 'v6 (2026-11-23)';
 const IN_APP = /KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|FB_IAB|Line\/|DaumApps|everytimeApp|; wv\)/i.test(UA);
 const buzz = p => { try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} };
 const store = {
@@ -305,9 +339,13 @@ const SIZES = [
   {n:9, l:'아주 쉬움'}, {n:16, l:'쉬움'}, {n:25, l:'보통'}, {n:36, l:'조금 어려움'},
   {n:49, l:'어려움'}, {n:64, l:'매우 어려움'}, {n:81, l:'고수'}, {n:100, l:'달인'}
 ];
-let chosenN = store.get('pp_n', 16), guideOn = store.get('pp_guide', true);
+const KID_SIZES = [{n:4, l:'아기'}, {n:6, l:'쉬움'}, {n:9, l:'보통'}, {n:12, l:'도전!'}];
+let chosenN = store.get('pp_n', 16), chosenKidN = store.get('pp_kn', 6), guideOn = store.get('pp_guide', true);
+let kidsOn = store.get('pp_kids', false), rotOn = store.get('pp_rot', false);
 let srcImg = null;   // HTMLCanvasElement (normalized photo)
 let srcAspect = 1;
+const curN = () => kidsOn ? chosenKidN : chosenN;
+const bestKey = (n, k, r) => n + (k ? 'K' : '') + (r ? 'R' : '');
 
 function gridFor(n, a){
   let cols = Math.max(2, Math.round(Math.sqrt(n * a)));
@@ -316,36 +354,40 @@ function gridFor(n, a){
 }
 function renderChips(){
   const box = $('chips'); box.innerHTML = '';
-  SIZES.forEach(s => {
+  (kidsOn ? KID_SIZES : SIZES).forEach(s => {
     const b = document.createElement('button');
-    b.className = 'chip' + (s.n === chosenN ? ' on' : '');
+    b.className = 'chip' + (s.n === curN() ? ' on' : '');
     b.innerHTML = s.n + '조각<small>' + s.l + '</small>';
-    b.onclick = () => { chosenN = s.n; store.set('pp_n', s.n); renderChips(); };
+    b.onclick = () => { if(kidsOn){ chosenKidN = s.n; store.set('pp_kn', s.n); } else { chosenN = s.n; store.set('pp_n', s.n); } renderChips(); };
     box.appendChild(b);
   });
-  const g = gridFor(chosenN, srcAspect);
+  const g = gridFor(curN(), srcAspect);
   $('sizeInfo').textContent = srcImg ? (g.cols + ' × ' + g.rows + ' = ' + (g.cols * g.rows) + '조각') : '사진을 먼저 골라주세요';
-  const best = store.get('pp_best', {})[chosenN];
-  $('rec').textContent = best ? ('🏆 ' + chosenN + '조각 최고 기록 ' + fmt(best)) : '';
+  const best = store.get('pp_best', {})[bestKey(curN(), kidsOn, rotOn)];
+  $('rec').textContent = best ? ('🏆 ' + curN() + '조각' + (kidsOn ? ' 어린이' : '') + (rotOn ? ' 회전' : '') + ' 최고 기록 ' + fmt(best)) : '';
 }
 function setSwitch(el, on){ el.classList.toggle('on', on); }
-setSwitch($('swGuide'), guideOn); setSwitch($('swSound'), soundOn);
+setSwitch($('swGuide'), guideOn); setSwitch($('swSound'), soundOn); setSwitch($('swKids'), kidsOn); setSwitch($('swRot'), rotOn);
 $('swGuide').onclick = () => { guideOn = !guideOn; store.set('pp_guide', guideOn); setSwitch($('swGuide'), guideOn); };
 $('swSound').onclick = () => { soundOn = !soundOn; store.set('pp_sound', soundOn); setSwitch($('swSound'), soundOn); if(soundOn) beep('snap'); };
+$('swKids').onclick = () => { kidsOn = !kidsOn; store.set('pp_kids', kidsOn); setSwitch($('swKids'), kidsOn); if(kidsOn && rotOn){ rotOn = false; store.set('pp_rot', false); setSwitch($('swRot'), false); } renderChips(); };
+$('swRot').onclick = () => { rotOn = !rotOn; store.set('pp_rot', rotOn); setSwitch($('swRot'), rotOn); if(rotOn && kidsOn){ kidsOn = false; store.set('pp_kids', false); setSwitch($('swKids'), false); } renderChips(); };
 
+function imageToCanvas(im){
+  const MAX = 2400;
+  const k = Math.min(1, MAX / Math.max(im.naturalWidth, im.naturalHeight));
+  const c = document.createElement('canvas');
+  c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
+  c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+  return c;
+}
 $('file').addEventListener('change', e => {
   const f = e.target.files && e.target.files[0];
   if(!f) return;
   const url = URL.createObjectURL(f);
   const im = new Image();
   im.onload = () => {
-    // normalize: max 2400px long side (EXIF orientation is applied by the browser)
-    const MAX = 2400;
-    const k = Math.min(1, MAX / Math.max(im.naturalWidth, im.naturalHeight));
-    const c = document.createElement('canvas');
-    c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
-    c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
-    srcImg = c; srcAspect = c.width / c.height;
+    srcImg = imageToCanvas(im); srcAspect = srcImg.width / srcImg.height;
     $('pickImg').src = url; $('pickImg').style.display = 'block';
     $('ph').style.display = 'none'; $('chg').style.display = 'block';
     $('picker').classList.add('has');
@@ -357,13 +399,77 @@ $('file').addEventListener('change', e => {
   e.target.value = '';
 });
 $('startBtn').onclick = () => { if(srcImg){ beep('tap'); startGame(); } };
-renderChips();
+
+/* ---------- saved game (IndexedDB) ---------- */
+const DB = {
+  db: null,
+  open(){
+    if(this.db) return Promise.resolve(this.db);
+    return new Promise((res, rej) => {
+      try{
+        const r = indexedDB.open('photopuzzle', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('kv');
+        r.onsuccess = () => { this.db = r.result; res(this.db); };
+        r.onerror = () => rej(r.error);
+      }catch(e){ rej(e); }
+    });
+  },
+  async get(k){ const db = await this.open(); return new Promise((res, rej) => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); },
+  async set(k, v){ const db = await this.open(); return new Promise((res, rej) => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = () => res(); t.onerror = () => rej(t.error); }); },
+  async del(k){ const db = await this.open(); return new Promise(res => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').delete(k); t.oncomplete = () => res(); t.onerror = () => res(); }); }
+};
+let saveT = null, resumeURL = '';
+function snapshot(){
+  return {
+    v: 1, ts: Date.now(), cols, rows, aspect: srcAspect, hT, vT, kids: G.kids, rot: G.rot, n: G.n,
+    elapsed: playing ? performance.now() - startT : elapsed, moves, placed,
+    pieces: pieces.map(p => ({x: p.x, y: p.y, locked: p.locked, rot: p.rot})),
+    order: order.map(p => pieces.indexOf(p))
+  };
+}
+function saveGame(now){
+  if(!playing || !pieces.length) return;
+  clearTimeout(saveT);
+  const run = () => DB.set('game', snapshot()).catch(() => {});
+  if(now) run(); else saveT = setTimeout(run, 500);
+}
+function clearSaved(){ DB.del('game').catch(() => {}); DB.del('gameImg').catch(() => {}); $('resumeCard').style.display = 'none'; }
+document.addEventListener('visibilitychange', () => { if(document.hidden) saveGame(true); });
+window.addEventListener('pagehide', () => saveGame(true));
+async function refreshResume(){
+  try{
+    const g = await DB.get('game'), img = await DB.get('gameImg');
+    if(!g || !img){ $('resumeCard').style.display = 'none'; return; }
+    if(resumeURL) URL.revokeObjectURL(resumeURL);
+    resumeURL = URL.createObjectURL(img);
+    $('resumeImg').src = resumeURL;
+    $('resumeInfo').textContent = g.placed + ' / ' + g.pieces.length + '조각 · ' + fmt(g.elapsed) + (g.kids ? ' · 어린이' : '') + (g.rot ? ' · 회전' : '');
+    $('resumeCard').style.display = '';
+  }catch(e){ $('resumeCard').style.display = 'none'; }
+}
+$('resumeGo').onclick = async () => {
+  try{
+    const g = await DB.get('game'), blob = await DB.get('gameImg');
+    const url = URL.createObjectURL(blob), im = new Image();
+    im.onload = () => {
+      srcImg = imageToCanvas(im); srcAspect = srcImg.width / srcImg.height;
+      $('pickImg').src = url; $('pickImg').style.display = 'block'; $('ph').style.display = 'none'; $('chg').style.display = 'block';
+      $('picker').classList.add('has'); $('startBtn').disabled = false;
+      beep('tap'); startGame(g);
+    };
+    im.onerror = () => { toast('저장된 퍼즐을 열 수 없어요'); clearSaved(); };
+    im.src = url;
+  }catch(e){ toast('저장된 퍼즐을 열 수 없어요'); clearSaved(); }
+};
+$('resumeDel').onclick = () => { clearSaved(); toast('저장된 퍼즐을 지웠어요'); };
+renderChips(); refreshResume();
 
 /* ================= GAME ================= */
 const cv = $('cv'), ctx = cv.getContext('2d');
 const W0 = 1000;                // puzzle width in units
 let H0 = 1000, cols = 4, rows = 4, cw = 250, ch = 250, m = 250, pad = 75;
-let pieces = [], order = [], placed = 0;
+let pieces = [], order = [], placed = 0, hT = [], vT = [];
+let G = {kids: false, rot: false, n: 16};
 let L = {w:0, h:0, s:1, bx:0, by:0, trayTop:0};
 let drag = null, dirty = true, playing = false, startT = 0, elapsed = 0, timerI = null, moves = 0;
 let boardImg = null;  // canvas scaled for board
@@ -382,51 +488,75 @@ function edge(p, ax, ay, bx, by, sign, nx, ny){
   }
   p.lineTo(bx, by);
 }
-function buildPath(pc){
+function buildPath(e){
   const p = new Path2D();
   p.moveTo(0, 0);
-  edge(p, 0, 0, cw, 0, pc.t, 0, -1);
-  edge(p, cw, 0, cw, ch, pc.r, 1, 0);
-  edge(p, cw, ch, 0, ch, pc.b, 0, 1);
-  edge(p, 0, ch, 0, 0, pc.l, -1, 0);
+  edge(p, 0, 0, cw, 0, e.t, 0, -1);
+  edge(p, cw, 0, cw, ch, e.r, 1, 0);
+  edge(p, cw, ch, 0, ch, e.b, 0, 1);
+  edge(p, 0, ch, 0, 0, e.l, -1, 0);
   p.closePath();
   return p;
 }
 
 let navDepth = 0, ignorePop = false;
 function pushNav(name){ try{ history.pushState({pp: name}, ''); navDepth++; }catch(e){} }
-function startGame(){
+
+/* saved: optional snapshot to resume */
+function startGame(saved){
   if(!$('game').classList.contains('on')) pushNav('game');
+  if(saved){
+    G = {kids: !!saved.kids, rot: !!saved.rot, n: saved.n};
+    cols = saved.cols; rows = saved.rows; hT = saved.hT; vT = saved.vT;
+  } else {
+    G = {kids: kidsOn, rot: rotOn, n: curN()};
+    const g = gridFor(G.n, srcAspect); cols = g.cols; rows = g.rows;
+    hT = []; vT = [];
+    for(let r = 0; r <= rows; r++){ hT[r] = []; for(let c = 0; c < cols; c++) hT[r][c] = (r === 0 || r === rows) ? 0 : (Math.random() < .5 ? 1 : -1); }
+    for(let r = 0; r < rows; r++){ vT[r] = []; for(let c = 0; c <= cols; c++) vT[r][c] = (c === 0 || c === cols) ? 0 : (Math.random() < .5 ? 1 : -1); }
+  }
   H0 = W0 / srcAspect;
-  const g = gridFor(chosenN, srcAspect); cols = g.cols; rows = g.rows;
   cw = W0 / cols; ch = H0 / rows; m = Math.min(cw, ch); pad = m * 0.3;
-  const hT = [], vT = [];
-  for(let r = 0; r <= rows; r++){ hT[r] = []; for(let c = 0; c < cols; c++) hT[r][c] = (r === 0 || r === rows) ? 0 : (Math.random() < .5 ? 1 : -1); }
-  for(let r = 0; r < rows; r++){ vT[r] = []; for(let c = 0; c <= cols; c++) vT[r][c] = (c === 0 || c === cols) ? 0 : (Math.random() < .5 ? 1 : -1); }
   pieces = [];
   for(let r = 0; r < rows; r++) for(let c = 0; c < cols; c++){
-    const pc = {r, c, t: -hT[r][c], b: hT[r + 1][c], l: -vT[r][c], rr: 0, x: 0, y: 0, locked: false, cv: null};
-    pc.r = r; pc.rgt = vT[r][c + 1];
+    const pc = {r, c, x: 0, y: 0, locked: false, cv: null, rot: 0, vt: 0, va: 0};
+    pc.path = buildPath({t: -hT[r][c], r: vT[r][c + 1], b: hT[r + 1][c], l: -vT[r][c]});
     pieces.push(pc);
   }
-  pieces.forEach(pc => { const right = pc.rgt; pc.path = buildPath({t: pc.t, r: right, b: pc.b, l: pc.l}); });
-  placed = 0; moves = 0; elapsed = 0; celebrate = 0; confetti = [];
+  celebrate = 0; confetti = [];
   $('peekImg').src = srcImg.toDataURL('image/jpeg', 0.85);
-  setSwitch($('gGuide'), guideOn); $('gGuide').classList.toggle('on', guideOn);
+  $('gGuide').classList.toggle('on', guideOn);
+  $('gRotHint').style.display = G.rot ? '' : 'none';
   show('game');
+  // store the photo once per new game (resume needs it)
+  if(!saved) srcImg.toBlob(b => { if(b) DB.set('gameImg', b).catch(() => {}); }, 'image/jpeg', 0.9);
   requestAnimationFrame(() => {
     layout(true);
-    scatter(pieces);
-    order = pieces.slice().sort(() => Math.random() - .5);
-    playing = true; startT = performance.now();
-    clearInterval(timerI); timerI = setInterval(tick, 250);
+    if(saved){
+      saved.pieces.forEach((s, i) => { const p = pieces[i]; p.x = s.x; p.y = s.y; p.locked = s.locked; p.rot = s.rot || 0; p.vt = p.va = p.rot * 90; });
+      order = saved.order.map(i => pieces[i]);
+      placed = pieces.filter(p => p.locked).length; moves = saved.moves || 0; elapsed = saved.elapsed || 0;
+      pieces.forEach(clampPiece);
+    } else {
+      scatter(pieces);
+      if(G.rot){
+        pieces.forEach(p => { p.rot = Math.floor(Math.random() * 4); p.vt = p.va = p.rot * 90; });
+        if(pieces.every(p => p.rot === 0)) { pieces[0].rot = 1; pieces[0].vt = pieces[0].va = 90; }
+      }
+      order = pieces.slice().sort(() => Math.random() - .5);
+      placed = 0; moves = 0; elapsed = 0;
+    }
+    playing = true; startT = performance.now() - elapsed;
+    clearInterval(timerI); timerI = setInterval(tick, 250); tick();
     updateHud(); dirty = true;
+    if(!saved) saveGame(true);
+    if(G.rot && !saved) toast('조각을 톡 누르면 90° 돌아가요');
   });
 }
 function fmt(ms){ const s = Math.floor(ms / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }
 function tick(){ if(playing){ elapsed = performance.now() - startT; $('gTime').textContent = fmt(elapsed); } }
 function updateHud(){
-  $('gCount').textContent = placed + ' / ' + pieces.length;
+  $('gCount').textContent = (G.kids ? '⭐ ' : '') + placed + ' / ' + pieces.length;
   $('gBar').style.width = (pieces.length ? placed / pieces.length * 100 : 0) + '%';
 }
 
@@ -435,10 +565,9 @@ function layout(first){
   const w = rect.width, h = rect.height;
   if(!w || !h) return;
   cv.width = Math.round(w * DPR); cv.height = Math.round(h * DPR);
-  const s = Math.min((w - 24) / W0, (h * 0.52) / H0);
+  const s = Math.min((w - 24) / W0, (h * (G.kids ? 0.5 : 0.52)) / H0);
   const old = L;
   L = {w, h, s, bx: (w - W0 * s) / 2, by: 14, trayTop: 14 + H0 * s + 14};
-  // board image
   boardImg = document.createElement('canvas');
   boardImg.width = Math.round(W0 * s * DPR); boardImg.height = Math.round(H0 * s * DPR);
   const bctx = boardImg.getContext('2d');
@@ -450,29 +579,26 @@ function layout(first){
 }
 function renderPieces(){
   const k = L.s * DPR;
-  const scaleSrc = boardImg.width / W0; // board px per unit
+  const scaleSrc = boardImg.width / W0;
   pieces.forEach(pc => {
     const c = pc.cv || document.createElement('canvas');
     c.width = Math.ceil((cw + 2 * pad) * k); c.height = Math.ceil((ch + 2 * pad) * k);
     const g = c.getContext('2d');
     g.setTransform(k, 0, 0, k, pad * k, pad * k);
     g.save(); g.clip(pc.path);
-    // source rect in units (clamped to image)
     const ux0 = Math.max(0, pc.c * cw - pad), uy0 = Math.max(0, pc.r * ch - pad);
     const ux1 = Math.min(W0, (pc.c + 1) * cw + pad), uy1 = Math.min(H0, (pc.r + 1) * ch + pad);
     g.drawImage(boardImg, ux0 * scaleSrc, uy0 * scaleSrc, (ux1 - ux0) * scaleSrc, (uy1 - uy0) * scaleSrc,
       ux0 - pc.c * cw, uy0 - pc.r * ch, ux1 - ux0, uy1 - uy0);
-    // bevel highlight
     g.lineWidth = 3 / L.s;
     g.strokeStyle = 'rgba(255,255,255,.45)'; g.translate(1 / L.s, 1 / L.s); g.stroke(pc.path);
     g.translate(-2 / L.s, -2 / L.s); g.strokeStyle = 'rgba(0,0,0,.25)'; g.stroke(pc.path);
     g.restore();
-    g.lineWidth = 1 / L.s; g.strokeStyle = 'rgba(60,40,80,.35)'; g.stroke(pc.path);
+    g.lineWidth = (G.kids ? 2 : 1) / L.s; g.strokeStyle = G.kids ? 'rgba(255,255,255,.9)' : 'rgba(60,40,80,.35)'; g.stroke(pc.path);
     pc.cv = c;
   });
 }
 function trayBox(){
-  // returns unit-space box where a piece's cell-origin can be placed in the tray
   const x0 = (8 + pad * L.s * 0.6 - L.bx) / L.s, x1 = (L.w - 8 - L.bx) / L.s - cw - pad * 0.6;
   const y0 = (L.trayTop + pad * L.s * 0.6 - L.by) / L.s;
   let y1 = (L.h - 8 - L.by) / L.s - ch - pad * 0.6;
@@ -486,11 +612,12 @@ function scatter(list){
   const slots = [];
   for(let i = 0; i < gr; i++) for(let j = 0; j < gc; j++) slots.push([j, i]);
   slots.sort(() => Math.random() - .5);
+  const jit = G.kids ? 0.2 : 0.7;
   list.forEach((pc, i) => {
     const [j, ii] = slots[i];
-    const fx = gc > 1 ? (j + 0.15 + Math.random() * 0.7) / gc : Math.random();
-    const fy = gr > 1 ? (ii + 0.15 + Math.random() * 0.7) / gr : Math.random();
-    pc.x = t.x0 + fx * (t.x1 - t.x0); pc.y = t.y0 + fy * (t.y1 - t.y0);
+    const fx = gc > 1 ? j / (gc - 1) + (Math.random() - .5) * jit / gc : Math.random();
+    const fy = gr > 1 ? ii / (gr - 1) + (Math.random() - .5) * jit / gr : Math.random();
+    pc.x = t.x0 + Math.min(1, Math.max(0, fx)) * (t.x1 - t.x0); pc.y = t.y0 + Math.min(1, Math.max(0, fy)) * (t.y1 - t.y0);
   });
   dirty = true;
 }
@@ -505,15 +632,21 @@ function toUnits(e){
   const r = cv.getBoundingClientRect();
   return {x: (e.clientX - r.left - L.bx) / L.s, y: (e.clientY - r.top - L.by) / L.s};
 }
+function localPoint(pc, u){
+  // undo piece rotation around its center → coordinates in the piece's own path space
+  const cx = pc.x + cw / 2, cy = pc.y + ch / 2, a = -pc.va * Math.PI / 180;
+  const dx = u.x - cx, dy = u.y - cy;
+  return {x: dx * Math.cos(a) - dy * Math.sin(a) + cw / 2, y: dx * Math.sin(a) + dy * Math.cos(a) + ch / 2};
+}
 function hit(u){
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
   for(let i = order.length - 1; i >= 0; i--){
     const pc = order[i]; if(pc.locked) continue;
-    if(ctx.isPointInPath(pc.path, u.x - pc.x, u.y - pc.y)){ ctx.restore(); return pc; }
+    const q = localPoint(pc, u);
+    if(ctx.isPointInPath(pc.path, q.x, q.y)){ ctx.restore(); return pc; }
   }
   ctx.restore();
-  // fat-finger fallback: nearest unlocked piece center within reach
-  let best = null, bd = (m * 0.7) ** 2;
+  let best = null, bd = (m * (G.kids ? 0.9 : 0.7)) ** 2;
   for(let i = order.length - 1; i >= 0; i--){
     const pc = order[i]; if(pc.locked) continue;
     const dx = u.x - (pc.x + cw / 2), dy = u.y - (pc.y + ch / 2), d = dx * dx + dy * dy;
@@ -521,6 +654,8 @@ function hit(u){
   }
   return best;
 }
+const snapDist = () => Math.max(18, m * L.s * (G.kids ? 0.65 : 0.38));
+function nearTarget(pc){ return pc.rot % 4 === 0 && Math.hypot(pc.x - pc.c * cw, pc.y - pc.r * ch) * L.s < snapDist(); }
 cv.addEventListener('pointerdown', e => {
   if(!playing || drag) return;
   const u = toUnits(e), pc = hit(u);
@@ -528,28 +663,39 @@ cv.addEventListener('pointerdown', e => {
   e.preventDefault();
   try{ cv.setPointerCapture(e.pointerId); }catch(_){}
   order.splice(order.indexOf(pc), 1); order.push(pc);
-  drag = {pc, id: e.pointerId, ox: u.x - pc.x, oy: u.y - pc.y};
+  drag = {pc, id: e.pointerId, ox: u.x - pc.x, oy: u.y - pc.y, sx: e.clientX, sy: e.clientY, t: performance.now(), moved: false};
   dirty = true;
 });
 cv.addEventListener('pointermove', e => {
   if(!drag || e.pointerId !== drag.id) return;
   e.preventDefault();
+  if(Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 7) drag.moved = true;
+  if(!drag.moved) return;
   const u = toUnits(e);
-  drag.pc.x = u.x - drag.ox; drag.pc.y = u.y - drag.oy - 0; clampPiece(drag.pc);
+  drag.pc.x = u.x - drag.ox; drag.pc.y = u.y - drag.oy; clampPiece(drag.pc);
   dirty = true;
 });
+function lockPiece(pc){
+  pc.x = pc.c * cw; pc.y = pc.r * ch; pc.locked = true; placed++;
+  pc.vt = pc.va = 0; pc.rot = 0;
+  order.splice(order.indexOf(pc), 1); order.unshift(pc);
+  pc.flash = performance.now();
+  beep('snap'); buzz(G.kids ? 35 : 18); updateHud();
+  if(placed === pieces.length) win();
+}
 function endDrag(e){
   if(!drag || (e && e.pointerId !== drag.id)) return;
-  const pc = drag.pc; drag = null; moves++;
-  const tx = pc.c * cw, ty = pc.r * ch;
-  const dist = Math.hypot(pc.x - tx, pc.y - ty) * L.s;
-  if(dist < Math.max(18, m * L.s * 0.38)){
-    pc.x = tx; pc.y = ty; pc.locked = true; placed++;
-    order.splice(order.indexOf(pc), 1); order.unshift(pc);
-    pc.flash = performance.now();
-    beep('snap'); buzz(18); updateHud();
-    if(placed === pieces.length) win();
+  const d = drag; drag = null;
+  const pc = d.pc;
+  const isTap = !d.moved && performance.now() - d.t < 400;
+  if(isTap && G.rot){
+    pc.rot = (pc.rot + 1) % 4; pc.vt += 90; beep('tap');
+    if(nearTarget(pc)) setTimeout(() => { if(!pc.locked && nearTarget(pc)) { lockPiece(pc); saveGame(); dirty = true; } }, 180);
+  } else if(d.moved){
+    moves++;
+    if(nearTarget(pc)) lockPiece(pc);
   }
+  saveGame();
   dirty = true;
 }
 cv.addEventListener('pointerup', endDrag);
@@ -559,15 +705,18 @@ cv.addEventListener('touchstart', e => e.preventDefault(), {passive: false});
 function win(){
   playing = false; clearInterval(timerI); elapsed = performance.now() - startT;
   $('gTime').textContent = fmt(elapsed);
-  const best = store.get('pp_best', {});
-  const isBest = !best[chosenN] || elapsed < best[chosenN];
-  if(isBest){ best[chosenN] = Math.round(elapsed); store.set('pp_best', best); }
+  clearSaved();
+  const best = store.get('pp_best', {}), key = bestKey(G.n, G.kids, G.rot);
+  const isBest = !best[key] || elapsed < best[key];
+  if(isBest){ best[key] = Math.round(elapsed); store.set('pp_best', best); }
   celebrate = performance.now();
   confetti = [];
   const colors = ['#ff7aa2', '#8b7cff', '#ffd166', '#06d6a0', '#4cc9f0', '#ff9f68'];
-  for(let i = 0; i < 140; i++) confetti.push({x: L.w / 2 + (Math.random() - .5) * 60, y: L.h * 0.35, vx: (Math.random() - .5) * 12, vy: -Math.random() * 14 - 4, s: 5 + Math.random() * 6, c: colors[i % colors.length], a: Math.random() * 6, va: (Math.random() - .5) * .4});
+  const nC = G.kids ? 220 : 140;
+  for(let i = 0; i < nC; i++) confetti.push({x: L.w / 2 + (Math.random() - .5) * 60, y: L.h * 0.35, vx: (Math.random() - .5) * 12, vy: -Math.random() * 14 - 4, s: 5 + Math.random() * 6, c: colors[i % colors.length], a: Math.random() * 6, va: (Math.random() - .5) * .4, star: G.kids && i % 3 === 0});
   setTimeout(() => { beep('win'); buzz([40, 60, 40, 60, 80]); }, 120);
   setTimeout(() => {
+    $('doneTitle').textContent = G.kids ? '🌟 참 잘했어요!' : '🎉 완성!';
     $('doneInfo').textContent = pieces.length + '조각 · ' + fmt(elapsed) + ' · ' + moves + '번 이동' + (isBest ? ' · 🏆 최고 기록!' : '');
     $('doneImg').src = srcImg.toDataURL('image/jpeg', 0.85);
     $('doneModal').classList.add('on');
@@ -577,40 +726,50 @@ function win(){
 function rr(g, x, y, w, h, r){ g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
 function drawPiece(pc, lifted){
   const k = L.s;
-  const x = L.bx + (pc.x - pad) * k, y = L.by + (pc.y - pad) * k;
   const w = (cw + 2 * pad) * k, h = (ch + 2 * pad) * k;
-  if(lifted){
-    ctx.save(); ctx.shadowColor = 'rgba(60,30,90,.35)'; ctx.shadowBlur = 16; ctx.shadowOffsetY = 8;
-    const sc = 1.06, cx = x + w / 2, cy = y + h / 2;
-    ctx.drawImage(pc.cv, cx - w * sc / 2, cy - h * sc / 2, w * sc, h * sc);
-    ctx.restore();
-  } else if(!pc.locked){
-    ctx.save(); ctx.shadowColor = 'rgba(60,30,90,.22)'; ctx.shadowBlur = 5; ctx.shadowOffsetY = 2;
-    ctx.drawImage(pc.cv, x, y, w, h); ctx.restore();
-  } else {
-    ctx.drawImage(pc.cv, x, y, w, h);
-  }
+  const cx = L.bx + (pc.x + cw / 2) * k, cy = L.by + (pc.y + ch / 2) * k;
+  ctx.save();
+  ctx.translate(cx, cy);
+  if(pc.va) ctx.rotate(pc.va * Math.PI / 180);
+  if(lifted){ ctx.shadowColor = 'rgba(60,30,90,.35)'; ctx.shadowBlur = 16; ctx.shadowOffsetY = 8; ctx.scale(1.06, 1.06); }
+  else if(!pc.locked){ ctx.shadowColor = 'rgba(60,30,90,.22)'; ctx.shadowBlur = 5; ctx.shadowOffsetY = 2; }
+  ctx.drawImage(pc.cv, -w / 2, -h / 2, w, h);
+  ctx.restore();
+}
+function drawStar(x, y, r){
+  ctx.beginPath();
+  for(let i = 0; i < 10; i++){ const a = -Math.PI / 2 + i * Math.PI / 5, rr2 = i % 2 ? r * 0.45 : r; ctx.lineTo(x + Math.cos(a) * rr2, y + Math.sin(a) * rr2); }
+  ctx.closePath(); ctx.fill();
 }
 function frame(now){
   requestAnimationFrame(frame);
-  const anim = celebrate || pieces.some(p => p.flash && now - p.flash < 500);
+  let spinning = false;
+  for(const p of pieces){ if(Math.abs(p.vt - p.va) > 0.5){ p.va += (p.vt - p.va) * 0.3; spinning = true; } else if(p.va !== p.vt){ p.va = p.vt; spinning = true; } }
+  const anim = celebrate || spinning || pieces.some(p => p.flash && now - p.flash < 500);
   if(!dirty && !anim) return;
   dirty = false;
   if(!$('game').classList.contains('on') || !boardImg) return;
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.clearRect(0, 0, L.w, L.h);
   const bw = W0 * L.s, bh = H0 * L.s;
-  // board
   ctx.save(); ctx.shadowColor = 'rgba(139,124,255,.18)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 6;
   ctx.fillStyle = '#fff'; rr(ctx, L.bx - 6, L.by - 6, bw + 12, bh + 12, 14); ctx.fill(); ctx.restore();
   ctx.fillStyle = '#f1ebf8'; ctx.fillRect(L.bx, L.by, bw, bh);
-  if(guideOn){ ctx.globalAlpha = 0.22; ctx.drawImage(boardImg, L.bx, L.by, bw, bh); ctx.globalAlpha = 1; }
-  // faint grid
-  ctx.strokeStyle = 'rgba(139,124,255,.16)'; ctx.lineWidth = 1; ctx.beginPath();
-  for(let c = 1; c < cols; c++){ const x = L.bx + c * cw * L.s; ctx.moveTo(x, L.by); ctx.lineTo(x, L.by + bh); }
-  for(let r = 1; r < rows; r++){ const y = L.by + r * ch * L.s; ctx.moveTo(L.bx, y); ctx.lineTo(L.bx + bw, y); }
-  ctx.stroke();
-  // tray hint
+  if(guideOn || G.kids){ ctx.globalAlpha = G.kids ? 0.3 : 0.22; ctx.drawImage(boardImg, L.bx, L.by, bw, bh); ctx.globalAlpha = 1; }
+  if(G.kids){
+    // kids: show each empty slot's piece outline so shapes can be matched
+    for(const pc of pieces){
+      if(pc.locked) continue;
+      ctx.save(); ctx.translate(L.bx + pc.c * cw * L.s, L.by + pc.r * ch * L.s); ctx.scale(L.s, L.s);
+      ctx.setLineDash([7 / L.s, 5 / L.s]); ctx.lineWidth = 2.2 / L.s; ctx.strokeStyle = 'rgba(255,255,255,.95)'; ctx.stroke(pc.path);
+      ctx.restore();
+    }
+  } else {
+    ctx.strokeStyle = 'rgba(139,124,255,.16)'; ctx.lineWidth = 1; ctx.beginPath();
+    for(let c = 1; c < cols; c++){ const x = L.bx + c * cw * L.s; ctx.moveTo(x, L.by); ctx.lineTo(x, L.by + bh); }
+    for(let r = 1; r < rows; r++){ const y = L.by + r * ch * L.s; ctx.moveTo(L.bx, y); ctx.lineTo(L.bx + bw, y); }
+    ctx.stroke();
+  }
   ctx.fillStyle = 'rgba(139,124,255,.06)'; rr(ctx, 6, L.trayTop - 4, L.w - 12, L.h - L.trayTop - 2, 16); ctx.fill();
 
   if(celebrate){
@@ -625,7 +784,11 @@ function frame(now){
     let alive = false;
     confetti.forEach(p => {
       p.vy += 0.35; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.a += p.va;
-      if(p.y < L.h + 20){ alive = true; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); ctx.restore(); }
+      if(p.y < L.h + 20){
+        alive = true; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); ctx.fillStyle = p.c;
+        if(p.star) drawStar(0, 0, p.s * 1.1); else ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2);
+        ctx.restore();
+      }
     });
     if(!alive && t > 1) celebrate = 0;
     return;
@@ -636,7 +799,14 @@ function frame(now){
       const a = 1 - (now - pc.flash) / 500;
       ctx.save(); ctx.globalAlpha = a * .7; ctx.fillStyle = '#fff';
       ctx.translate(L.bx + pc.x * L.s, L.by + pc.y * L.s); ctx.scale(L.s, L.s); ctx.fill(pc.path); ctx.restore();
+      if(G.kids){ ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#ffd166'; drawStar(L.bx + (pc.x + cw / 2) * L.s, L.by + (pc.y + ch / 2) * L.s - (1 - a) * 30, m * L.s * 0.28); ctx.restore(); }
     }
+  }
+  // kids: glow the target slot when the dragged piece is close enough
+  if(drag && G.kids && drag.moved && nearTarget(drag.pc)){
+    const pc = drag.pc;
+    ctx.save(); ctx.translate(L.bx + pc.c * cw * L.s, L.by + pc.r * ch * L.s); ctx.scale(L.s, L.s);
+    ctx.fillStyle = 'rgba(255,122,162,.35)'; ctx.fill(pc.path); ctx.restore();
   }
   for(const pc of order){ if(!pc.locked && (!drag || drag.pc !== pc)) drawPiece(pc, false); }
   if(drag) drawPiece(drag.pc, true);
@@ -645,7 +815,7 @@ requestAnimationFrame(frame);
 
 window.addEventListener('resize', () => { if($('game').classList.contains('on') && pieces.length) setTimeout(() => layout(false), 60); });
 $('gGuide').onclick = () => { guideOn = !guideOn; store.set('pp_guide', guideOn); $('gGuide').classList.toggle('on', guideOn); setSwitch($('swGuide'), guideOn); dirty = true; };
-$('gShuffle').onclick = () => { if(!playing) return; scatter(pieces.filter(p => !p.locked)); beep('tap'); };
+$('gShuffle').onclick = () => { if(!playing) return; scatter(pieces.filter(p => !p.locked)); beep('tap'); saveGame(); };
 const peekOn = on => $('peek').classList.toggle('on', on);
 $('gPeek').addEventListener('pointerdown', e => { e.preventDefault(); peekOn(true); });
 ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => $('gPeek').addEventListener(ev, () => peekOn(false)));
@@ -653,12 +823,17 @@ $('gPeek').addEventListener('click', () => { if(!$('peek').classList.contains('o
 $('gBack').onclick = () => { if(playing && placed > 0) $('exitModal').classList.add('on'); else quitGame(); };
 $('exitNo').onclick = () => $('exitModal').classList.remove('on');
 $('exitYes').onclick = () => { $('exitModal').classList.remove('on'); quitGame(); };
-function quitGameUI(){ playing = false; clearInterval(timerI); celebrate = 0; document.querySelectorAll('.modal').forEach(x => x.classList.remove('on')); show('home'); renderChips(); }
+function quitGameUI(){
+  if(playing) saveGame(true);
+  playing = false; clearInterval(timerI); celebrate = 0;
+  document.querySelectorAll('.modal').forEach(x => x.classList.remove('on'));
+  show('home'); renderChips(); setTimeout(refreshResume, 150);
+}
 function quitGame(){ quitGameUI(); if(navDepth > 0){ ignorePop = true; const n = navDepth; navDepth = 0; history.go(-n); } }
 window.addEventListener('popstate', () => {
   if(ignorePop){ ignorePop = false; return; }
   navDepth = Math.max(0, navDepth - 1);
-  const openModal = ['saveModal', 'choiceModal', 'exitModal'].find(id => $(id).classList.contains('on'));
+  const openModal = ['saveModal', 'choiceModal', 'setModal', 'exitModal'].find(id => $(id).classList.contains('on'));
   const cur = document.querySelector('.screen.on').id;
   if(openModal){ $(openModal).classList.remove('on'); pushNav(cur); return; }
   if(cur === 'sticker'){ show('game'); $('doneModal').classList.add('on'); return; }
@@ -672,7 +847,7 @@ $('newPic').onclick = () => { $('doneModal').classList.remove('on'); quitGame();
 $('mkSticker').onclick = () => { $('doneModal').classList.remove('on'); openSticker(); };
 
 /* ================= STICKER ================= */
-const SHAPES = [['circle','⚪ 동그라미'],['heart','💗 하트'],['flower','🌸 꽃'],['round','⬜ 둥근네모'],['star','⭐ 별']];
+const SHAPES = [['circle','⚪ 동그라미'],['cutout','✂️ 누끼 오려내기 (AI)'],['heart','💗 하트'],['flower','🌸 꽃'],['round','⬜ 둥근네모'],['star','⭐ 별']];
 const FILTERS = [['none','원본'],['anime','🎨 애니 수채화 (AI)'],['cartoon','만화'],['pastel','파스텔'],['pop','팝 컬러'],['warm','따뜻한'],['mono','흑백']];
 const PRESETS = ['최고!','고마워','사랑해','축하해','ㅋㅋㅋ','굿굿','화이팅!','보고싶어','미안해','오케이'];
 const COLORS = ['#ff4f8b','#7b61ff','#ff8a00','#18b26b','#1e90ff','#3b3054','#ffffff'];
@@ -681,7 +856,7 @@ const DECO_SET = {hearts:['💖','💕','💗'], sparkle:['✨','⭐️','✨'],
 const BGS = [['clear','투명 + 흰 테두리'],['clearNo','투명 (테두리 없음)'],['white','흰 배경'],['pink','핑크 배경'],['sky','하늘 배경']];
 const ST = {shape:'circle', filter:'none', text:'', color:COLORS[0], deco:'none', bg:'clear', zoom:1, px:0, py:0};
 const scv = $('scv'), sctx = scv.getContext('2d');
-let fBase = null, fCache = {}, lastBlob = null, lastURL = '', blobT = null, stickerSrc = null;
+let fBase = null, fCache = {}, stickerSrc = null, maskCanvas = null, maskBox = null, cutCache = {};
 
 function opts(boxId, list, key, render){
   const box = $(boxId); box.innerHTML = '';
@@ -709,7 +884,7 @@ function openSticker(){
   fBase = document.createElement('canvas');
   fBase.width = Math.round(stickerSrc.width * k); fBase.height = Math.round(stickerSrc.height * k);
   fBase.getContext('2d').drawImage(stickerSrc, 0, 0, fBase.width, fBase.height);
-  fCache = {}; ST.zoom = 1; ST.px = 0; ST.py = 0;
+  fCache = {}; maskCanvas = null; maskBox = null; cutCache = {}; ST.zoom = 1; ST.px = 0; ST.py = 0;
   buildControls(); pushNav('sticker'); show('sticker');
   const go = () => drawSticker();
   if(document.fonts && document.fonts.load){ document.fonts.load('72px Jua').then(go, go); } else go();
@@ -742,50 +917,99 @@ function boxBlur(src, w, h, r){
   for(let i = 3; i < src.length; i += 4) out[i] = src[i];
   return out;
 }
-/* ---- AI anime-painting filter (AnimeGANv3, runs on the phone) ---- */
-let aiSession = null, aiLoading = null, aiRunning = false;
+/* ---- on-device AI (onnxruntime-web): anime painting + background removal ---- */
+const sessions = {}, sessLoading = {};
+let aiQueue = Promise.resolve(), animePending = false, cutPending = false;
 function loadScript(src){ return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = () => rej(new Error('script')); document.head.appendChild(el); }); }
-function getAI(){
-  if(aiSession) return Promise.resolve(aiSession);
-  if(!aiLoading){
-    aiLoading = (async () => {
+function getSession(file){
+  if(sessions[file]) return Promise.resolve(sessions[file]);
+  if(!sessLoading[file]){
+    sessLoading[file] = (async () => {
       if(!window.ort) await loadScript('ai/ort.wasm.min.js');
       ort.env.wasm.wasmPaths = new URL('ai/', location.href).href;
       ort.env.wasm.numThreads = 1;
-      aiSession = await ort.InferenceSession.create('ai/anime_hayao.onnx', {executionProviders: ['wasm'], graphOptimizationLevel: 'all'});
-      return aiSession;
-    })().catch(e => { aiLoading = null; throw e; });
+      const s = await ort.InferenceSession.create('ai/' + file, {executionProviders: ['wasm'], graphOptimizationLevel: 'all'});
+      sessions[file] = s; return s;
+    })().catch(e => { delete sessLoading[file]; throw e; });
   }
-  return aiLoading;
+  return sessLoading[file];
 }
 const nextFrame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
-async function runAnime(){
-  if(aiRunning) return; aiRunning = true;
-  const busy = $('aiBusy');
-  $('aiMsg').innerHTML = aiSession ? 'AI가 그림으로 바꾸는 중…' : 'AI 준비 중… (처음 한 번만 약 16MB 다운로드)';
-  busy.classList.add('on');
-  try{
-    const sess = await getAI();
-    $('aiMsg').textContent = 'AI가 그림으로 바꾸는 중… (몇 초 걸려요)';
-    await nextFrame();
-    const k = Math.min(1, 640 / Math.max(fBase.width, fBase.height));
-    const W = Math.max(64, Math.round(fBase.width * k / 8) * 8), H = Math.max(64, Math.round(fBase.height * k / 8) * 8);
-    const c = document.createElement('canvas'); c.width = W; c.height = H;
-    const g = c.getContext('2d'); g.drawImage(fBase, 0, 0, W, H);
-    const id = g.getImageData(0, 0, W, H), d = id.data, inp = new Float32Array(W * H * 3);
-    for(let i = 0, j = 0; i < d.length; i += 4, j += 3){ inp[j] = d[i] / 127.5 - 1; inp[j + 1] = d[i + 1] / 127.5 - 1; inp[j + 2] = d[i + 2] / 127.5 - 1; }
-    const out = await sess.run({[sess.inputNames[0]]: new ort.Tensor('float32', inp, [1, H, W, 3])});
-    const y = out[sess.outputNames[0]].data;
-    for(let i = 0, j = 0; i < d.length; i += 4, j += 3){ d[i] = (y[j] + 1) * 127.5; d[i + 1] = (y[j + 1] + 1) * 127.5; d[i + 2] = (y[j + 2] + 1) * 127.5; d[i + 3] = 255; }
-    g.putImageData(id, 0, 0);
-    fCache.anime = c;
-  }catch(e){
-    console.error(e);
-    toast(IN_APP ? '앱 안 브라우저에서는 AI가 안 돼요. 크롬/사파리로 열어주세요' : 'AI 변환 실패: ai 폴더가 올라가 있는지, 인터넷 연결을 확인해 주세요');
-    if(ST.filter === 'anime'){ ST.filter = 'none'; buildControls(); }
-  }finally{
-    busy.classList.remove('on'); aiRunning = false; drawSticker();
-  }
+function busy(on, msg){ if(msg) $('aiMsg').innerHTML = msg; $('aiBusy').classList.toggle('on', on); }
+function aiJob(fn){ aiQueue = aiQueue.then(fn, fn); return aiQueue; }
+function aiFail(e){
+  console.error(e);
+  toast(IN_APP ? '앱 안 브라우저에서는 AI가 안 돼요. 크롬/사파리로 열어주세요' : 'AI 실행 실패: ai 폴더가 올라가 있는지, 인터넷 연결을 확인해 주세요');
+}
+function runAnime(){
+  if(animePending) return; animePending = true;
+  aiJob(async () => {
+    const file = 'anime_hayao.onnx';
+    busy(true, sessions[file] ? 'AI가 그림으로 바꾸는 중…' : 'AI 준비 중… (처음 한 번만 다운로드)');
+    try{
+      const sess = await getSession(file);
+      busy(true, 'AI가 그림으로 바꾸는 중… (몇 초 걸려요)'); await nextFrame();
+      const k = Math.min(1, 640 / Math.max(fBase.width, fBase.height));
+      const W = Math.max(64, Math.round(fBase.width * k / 8) * 8), H = Math.max(64, Math.round(fBase.height * k / 8) * 8);
+      const c = document.createElement('canvas'); c.width = W; c.height = H;
+      const g = c.getContext('2d'); g.drawImage(fBase, 0, 0, W, H);
+      const id = g.getImageData(0, 0, W, H), d = id.data, inp = new Float32Array(W * H * 3);
+      for(let i = 0, j = 0; i < d.length; i += 4, j += 3){ inp[j] = d[i] / 127.5 - 1; inp[j + 1] = d[i + 1] / 127.5 - 1; inp[j + 2] = d[i + 2] / 127.5 - 1; }
+      const out = await sess.run({[sess.inputNames[0]]: new ort.Tensor('float32', inp, [1, H, W, 3])});
+      const y = out[sess.outputNames[0]].data;
+      for(let i = 0, j = 0; i < d.length; i += 4, j += 3){ d[i] = (y[j] + 1) * 127.5; d[i + 1] = (y[j + 1] + 1) * 127.5; d[i + 2] = (y[j + 2] + 1) * 127.5; d[i + 3] = 255; }
+      g.putImageData(id, 0, 0);
+      fCache.anime = c; delete cutCache.anime;
+    }catch(e){
+      aiFail(e); if(ST.filter === 'anime'){ ST.filter = 'none'; buildControls(); }
+    }finally{ animePending = false; busy(false); drawSticker(); }
+  });
+}
+function runCutout(){
+  if(cutPending) return; cutPending = true;
+  aiJob(async () => {
+    const file = 'u2netp.onnx', S = 320;
+    busy(true, sessions[file] ? '사람·사물을 오려내는 중…' : 'AI 준비 중… (처음 한 번만 다운로드)');
+    try{
+      const sess = await getSession(file);
+      busy(true, '사람·사물을 오려내는 중…'); await nextFrame();
+      const c = document.createElement('canvas'); c.width = S; c.height = S;
+      const g = c.getContext('2d'); g.drawImage(fBase, 0, 0, S, S);
+      const d = g.getImageData(0, 0, S, S).data, inp = new Float32Array(3 * S * S);
+      const mean = [0.485, 0.456, 0.406], std = [0.229, 0.224, 0.225];
+      for(let p = 0; p < S * S; p++) for(let k = 0; k < 3; k++) inp[k * S * S + p] = (d[p * 4 + k] / 255 - mean[k]) / std[k];
+      const out = await sess.run({[sess.inputNames[0]]: new ort.Tensor('float32', inp, [1, 3, S, S])});
+      const y = out[sess.outputNames[0]].data;
+      let mn = 1e9, mx = -1e9; for(let i = 0; i < y.length; i++){ if(y[i] < mn) mn = y[i]; if(y[i] > mx) mx = y[i]; }
+      const mc = document.createElement('canvas'); mc.width = S; mc.height = S;
+      const mg = mc.getContext('2d'), mid = mg.createImageData(S, S);
+      let x0 = S, y0 = S, x1 = -1, y1 = -1;
+      for(let p = 0; p < S * S; p++){
+        let v = (y[p] - mn) / (mx - mn + 1e-8);
+        v = Math.min(1, Math.max(0, (v - 0.12) / 0.6));          // tighten soft edges
+        mid.data[p * 4] = mid.data[p * 4 + 1] = mid.data[p * 4 + 2] = 255; mid.data[p * 4 + 3] = v * 255;
+        if(v > 0.5){ const px = p % S, py = (p / S) | 0; if(px < x0) x0 = px; if(px > x1) x1 = px; if(py < y0) y0 = py; if(py > y1) y1 = py; }
+      }
+      if(x1 < 0 || (x1 - x0) * (y1 - y0) < S * S * 0.01) throw new Error('nosubject');
+      mg.putImageData(mid, 0, 0);
+      const full = document.createElement('canvas'); full.width = fBase.width; full.height = fBase.height;
+      const fg = full.getContext('2d'); fg.imageSmoothingQuality = 'high'; fg.drawImage(mc, 0, 0, full.width, full.height);
+      maskCanvas = full; maskBox = {x0: x0 / S, y0: y0 / S, x1: (x1 + 1) / S, y1: (y1 + 1) / S}; cutCache = {};
+      ST.zoom = 1; ST.px = 0; ST.py = 0; $('oZoom').value = 1;
+    }catch(e){
+      if(e && e.message === 'nosubject') toast('오려낼 사람이나 사물을 찾지 못했어요'); else aiFail(e);
+      if(ST.shape === 'cutout'){ ST.shape = 'circle'; buildControls(); }
+    }finally{ cutPending = false; busy(false); drawSticker(); }
+  });
+}
+function cutoutOf(filter){
+  if(cutCache[filter]) return cutCache[filter];
+  const img = filtered(filter);
+  const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+  const g = c.getContext('2d'); g.drawImage(img, 0, 0);
+  g.globalCompositeOperation = 'destination-in'; g.drawImage(maskCanvas, 0, 0, c.width, c.height);
+  if(filter !== 'anime' || fCache.anime) cutCache[filter] = c;
+  return c;
 }
 function filtered(name){
   if(name === 'none') return fBase;
@@ -867,35 +1091,57 @@ function shapePath(kind, cx, cy, R){
   return p;
 }
 
-function drawSticker(){
-  if(!fBase) return;
-  const S = 512, g = sctx;
+/* render one sticker onto a 512×512 context. st = sticker settings */
+function renderSticker(g, st){
+  const S = 512;
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, S, S);
-  const bgFill = {white:'#ffffff', pink:'#ffe3ec', sky:'#dff1ff'}[ST.bg];
+  const bgFill = {white:'#ffffff', pink:'#ffe3ec', sky:'#dff1ff'}[st.bg];
   if(bgFill){ g.fillStyle = bgFill; g.fillRect(0, 0, S, S); }
-  const hasText = ST.text.trim().length > 0;
+  const hasText = st.text.trim().length > 0;
   const cx = S / 2, cy = hasText ? S / 2 - 22 : S / 2, R = hasText ? 178 : 196;
-  const path = shapePath(ST.shape, cx, cy, R);
-  const border = ST.bg !== 'clearNo';
-  if(border){
-    g.save(); g.shadowColor = 'rgba(40,20,60,.28)'; g.shadowBlur = 14; g.shadowOffsetY = 5;
-    g.fillStyle = '#fff'; g.strokeStyle = '#fff'; g.lineJoin = 'round'; g.lineWidth = 26;
-    g.stroke(path); g.fill(path); g.restore();
+  const border = st.bg !== 'clearNo';
+  const cut = st.shape === 'cutout';
+  if(cut && !maskCanvas) runCutout();
+  if(cut && maskCanvas){
+    // die-cut sticker: subject only, with a white outline
+    const img = cutoutOf(st.filter), bw = (maskBox.x1 - maskBox.x0) * img.width, bh = (maskBox.y1 - maskBox.y0) * img.height;
+    const aw = 420, ah = hasText ? 360 : 420;
+    const sc = Math.min(aw / bw, ah / bh) * st.zoom;
+    const bcx = (maskBox.x0 + maskBox.x1) / 2 * img.width, bcy = (maskBox.y0 + maskBox.y1) / 2 * img.height;
+    const lim = 200 * st.zoom; st.px = Math.max(-lim, Math.min(lim, st.px)); st.py = Math.max(-lim, Math.min(lim, st.py));
+    const dx = cx - bcx * sc + st.px, dy = cy - bcy * sc + st.py;
+    const layer = document.createElement('canvas'); layer.width = S; layer.height = S;
+    const lg = layer.getContext('2d'); lg.imageSmoothingQuality = 'high';
+    lg.drawImage(img, dx, dy, img.width * sc, img.height * sc);
+    if(border){
+      const ol = document.createElement('canvas'); ol.width = S; ol.height = S;
+      const og = ol.getContext('2d'), rad = 11;
+      for(let i = 0; i < 16; i++){ const a = i / 16 * Math.PI * 2; og.drawImage(layer, Math.cos(a) * rad, Math.sin(a) * rad); }
+      og.drawImage(layer, 0, 0);
+      og.globalCompositeOperation = 'source-in'; og.fillStyle = '#fff'; og.fillRect(0, 0, S, S);
+      g.save(); g.shadowColor = 'rgba(40,20,60,.3)'; g.shadowBlur = 12; g.shadowOffsetY = 4; g.drawImage(ol, 0, 0); g.restore();
+    }
+    g.drawImage(layer, 0, 0);
+  } else {
+    const path = shapePath(cut ? 'circle' : st.shape, cx, cy, R);
+    if(border){
+      g.save(); g.shadowColor = 'rgba(40,20,60,.28)'; g.shadowBlur = 14; g.shadowOffsetY = 5;
+      g.fillStyle = '#fff'; g.strokeStyle = '#fff'; g.lineJoin = 'round'; g.lineWidth = 26;
+      g.stroke(path); g.fill(path); g.restore();
+    }
+    const img = filtered(st.filter);
+    const box = R * 2.15;
+    const sc = Math.max(box / img.width, box / img.height) * st.zoom;
+    const dw = img.width * sc, dh = img.height * sc;
+    const maxPX = Math.max(0, (dw - box) / 2), maxPY = Math.max(0, (dh - box) / 2);
+    st.px = Math.max(-maxPX, Math.min(maxPX, st.px)); st.py = Math.max(-maxPY, Math.min(maxPY, st.py));
+    g.save(); g.clip(path);
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(img, cx - dw / 2 + st.px, cy - dh / 2 + st.py, dw, dh);
+    g.restore();
   }
-  // photo
-  const img = filtered(ST.filter);
-  const box = R * 2.15;
-  const sc = Math.max(box / img.width, box / img.height) * ST.zoom;
-  const dw = img.width * sc, dh = img.height * sc;
-  const maxPX = Math.max(0, (dw - box) / 2), maxPY = Math.max(0, (dh - box) / 2);
-  ST.px = Math.max(-maxPX, Math.min(maxPX, ST.px)); ST.py = Math.max(-maxPY, Math.min(maxPY, ST.py));
-  g.save(); g.clip(path);
-  g.imageSmoothingQuality = 'high';
-  g.drawImage(img, cx - dw / 2 + ST.px, cy - dh / 2 + ST.py, dw, dh);
-  g.restore();
-  // decorations
-  if(ST.deco !== 'none'){
-    const set = DECO_SET[ST.deco];
+  if(st.deco !== 'none'){
+    const set = DECO_SET[st.deco];
     const spots = [[-0.86, -0.78, 64, -14], [0.84, -0.86, 50, 12], [0.95, -0.25, 38, 18], [-0.98, -0.1, 34, -10], [0.9, 0.55, 46, 10]];
     spots.forEach(([dx, dy, size, rot], i) => {
       if(hasText && dy > 0.4) return;
@@ -906,23 +1152,23 @@ function drawSticker(){
       g.fillText(set[i % set.length], 0, 0); g.restore();
     });
   }
-  // text
   if(hasText){
-    const t = ST.text.trim();
+    const t = st.text.trim();
     let fs = 86;
     g.save(); g.translate(cx, S - 68); g.rotate(-4 * Math.PI / 180);
     const setF = () => g.font = fs + 'px Jua,"Apple SD Gothic Neo","Noto Sans KR",sans-serif';
     setF(); while(g.measureText(t).width > 440 && fs > 34){ fs -= 4; setF(); }
     g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
-    const light = ST.color === '#ffffff';
+    const light = st.color === '#ffffff';
     g.shadowColor = 'rgba(40,20,60,.3)'; g.shadowBlur = 8; g.shadowOffsetY = 3;
     g.lineWidth = fs * 0.28; g.strokeStyle = light ? '#3b3054' : '#ffffff'; g.strokeText(t, 0, 0);
     g.shadowColor = 'transparent';
     g.lineWidth = fs * 0.07; g.strokeStyle = light ? '#3b3054' : 'rgba(0,0,0,.25)'; g.strokeText(t, 0, 0);
-    g.fillStyle = ST.color; g.fillText(t, 0, 0);
+    g.fillStyle = st.color; g.fillText(t, 0, 0);
     g.restore();
   }
 }
+function drawSticker(){ if(fBase) renderSticker(sctx, ST); }
 
 // pan / pinch on sticker preview
 const ptrs = new Map(); let pinch0 = null;
@@ -940,7 +1186,7 @@ scv.addEventListener('touchstart', e => e.preventDefault(), {passive: false});
 
 $('sRandom').onclick = () => {
   const pick = a => a[Math.floor(Math.random() * a.length)];
-  ST.shape = pick(SHAPES)[0]; ST.filter = pick(FILTERS.filter(f => f[0] !== 'anime' || fCache.anime))[0]; ST.deco = pick(DECOS.slice(1))[0];
+  ST.shape = pick(SHAPES.filter(s => s[0] !== 'cutout' || maskCanvas))[0]; ST.filter = pick(FILTERS.filter(f => f[0] !== 'anime' || fCache.anime))[0]; ST.deco = pick(DECOS.slice(1))[0];
   ST.text = pick(PRESETS); ST.color = pick(COLORS.slice(0, 6));
   buildControls(); drawSticker();
 };
@@ -1015,6 +1261,49 @@ $('cShare').onclick = () => shareSticker();
 $('cSave').onclick = () => downloadSave();
 $('cClose').onclick = () => $('choiceModal').classList.remove('on');
 $('saveClose').onclick = () => $('saveModal').classList.remove('on');
+
+/* ---- sticker set ---- */
+let setItems = [], setFmtSel = 'jpg';
+function buildSet(){
+  const texts = $('oSet').value.split(/[,，]/).map(t => t.trim()).filter(Boolean).slice(0, 6);
+  if(!texts.length){ toast('세트 문구를 쉼표로 구분해서 입력하세요'); return; }
+  if(animePending || cutPending){ toast('AI 처리가 끝난 뒤에 다시 눌러주세요'); return; }
+  const palette = COLORS.slice(0, 6);
+  const start = Math.max(0, palette.indexOf(ST.color));
+  setItems = texts.map((t, i) => {
+    const c = document.createElement('canvas'); c.width = 512; c.height = 512;
+    const st = Object.assign({}, ST, {text: t, color: palette[(start + i) % palette.length]});
+    renderSticker(c.getContext('2d'), st);
+    const png = c.toDataURL('image/png');
+    const jc = document.createElement('canvas'); jc.width = 512; jc.height = 512;
+    const jg = jc.getContext('2d'); jg.fillStyle = ({pink: '#ffe3ec', sky: '#dff1ff'})[ST.bg] || '#ffffff'; jg.fillRect(0, 0, 512, 512); jg.drawImage(c, 0, 0);
+    return {text: t, png, jpg: jc.toDataURL('image/jpeg', 0.95)};
+  });
+  drawSticker();
+  renderSetGrid();
+  $('setDl').style.display = IS_IOS ? 'none' : '';
+  $('setModal').classList.add('on');
+}
+function renderSetGrid(){
+  const g = $('setGrid'); g.innerHTML = ''; g.style.gridTemplateColumns = 'repeat(' + (setItems.length <= 4 ? 2 : 3) + ',1fr)'; g.style.padding = setItems.length <= 4 ? '0 12%' : '0';
+  setItems.forEach(it => { const im = document.createElement('img'); im.className = 'saveimg'; im.style.width = '100%'; im.src = it[setFmtSel]; im.alt = it.text; g.appendChild(im); });
+  [...$('setFmt').children].forEach(b => b.classList.toggle('on', b.dataset.f === setFmtSel));
+}
+[...document.querySelectorAll('#setFmt .opt')].forEach(b => b.onclick = () => { setFmtSel = b.dataset.f; renderSetGrid(); });
+$('mkSet').onclick = () => { if(IN_APP){ $('inappBar').style.display = 'block'; toast('카카오톡 안에서는 저장이 안 돼요. 크롬/사파리로 열어주세요'); return; } buildSet(); };
+$('setShare').onclick = () => {
+  const ext = setFmtSel === 'png' ? '.png' : '.jpg', mime = setFmtSel === 'png' ? 'image/png' : 'image/jpeg', base = 'photopuzzle_' + stamp();
+  const files = setItems.map((it, i) => new File([dataURLtoBlob(it[setFmtSel])], base + '_' + (i + 1) + ext, {type: mime}));
+  let ok = false; try{ ok = !!(navigator.canShare && navigator.share && navigator.canShare({files})); }catch(_){}
+  if(!ok){ toast('이 브라우저는 여러 장 공유를 지원하지 않아요. 길게 눌러 한 장씩 저장하세요'); return; }
+  navigator.share({files}).then(() => toast('완료! 사진첩이나 카톡에서 확인하세요')).catch(err => { if(!err || err.name !== 'AbortError') toast('공유 실패(' + (err && err.name || '오류') + ') · 길게 눌러 저장하세요'); });
+};
+$('setDl').onclick = () => {
+  const ext = setFmtSel === 'png' ? '.png' : '.jpg', base = 'photopuzzle_' + stamp();
+  setItems.forEach((it, i) => setTimeout(() => { const a = document.createElement('a'); a.href = it[setFmtSel]; a.download = base + '_' + (i + 1) + ext; document.body.appendChild(a); a.click(); a.remove(); }, i * 500));
+  toast(IS_ANDROID ? '저장 중… 갤러리의 "Download(다운로드)" 앨범을 확인하세요' : '다운로드됨: 파일 앱 > 다운로드 폴더');
+};
+$('setClose').onclick = () => $('setModal').classList.remove('on');
 
 /* ---- escape in-app browsers (KakaoTalk etc.) — downloads, Web Share and AI don't work there ---- */
 function openExternal(){
