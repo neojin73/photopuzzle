@@ -218,14 +218,19 @@ input[type=range]{width:100%;accent-color:var(--pink)}
   </div>
 </section>
 
-<!-- SAVE CHOICE (Android) -->
+<!-- SAVE SHEET -->
 <div class="modal" id="choiceModal">
-  <div class="sheet">
+  <div class="sheet" style="gap:10px">
     <h2>이모티콘 저장</h2>
-    <img class="saveimg" id="choiceImg" alt="이모티콘" style="width:46%">
-    <button class="btn" id="cSave">💾 갤러리에 저장</button>
-    <button class="btn ghost" id="cShare">💬 카톡 · 문자로 보내기</button>
-    <button class="btn ghost" id="cClose" style="height:46px;font-size:16px">닫기</button>
+    <img class="saveimg" id="choiceImg" alt="이모티콘" style="width:44%">
+    <div class="hs" id="fmtBox" style="justify-content:center">
+      <button class="opt on" data-f="jpg">사진 (JPG) · 추천</button>
+      <button class="opt" data-f="png">투명 배경 (PNG)</button>
+    </div>
+    <button class="btn" id="cShare">📤 공유 · 저장 (카톡 / 문자 / 사진첩)</button>
+    <button class="btn ghost" id="cSave">💾 파일로 다운로드</button>
+    <div class="hint" id="cHint" style="font-size:13px">버튼이 안 되면 위 이미지를 <b>길게 눌러</b> 저장하세요.</div>
+    <button class="btn ghost" id="cClose" style="height:44px;font-size:16px">닫기</button>
   </div>
 </div>
 
@@ -856,10 +861,6 @@ function drawSticker(){
     g.fillStyle = ST.color; g.fillText(t, 0, 0);
     g.restore();
   }
-  // prepare blob for instant sharing (share must run inside tap handler on iOS)
-  lastBlob = null;
-  clearTimeout(blobT);
-  blobT = setTimeout(() => { scv.toBlob(b => { lastBlob = b; }, 'image/png'); }, 120);
 }
 
 // pan / pinch on sticker preview
@@ -886,37 +887,70 @@ $('sBack').onclick = () => { if(navDepth > 0) history.back(); else { show('game'
 $('sHome').onclick = () => quitGame();
 
 function stamp(){ const d = new Date(), z = n => String(n).padStart(2, '0'); return d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '_' + z(d.getHours()) + z(d.getMinutes()) + z(d.getSeconds()); }
+let saveFmt = 'jpg', outURL = {jpg: '', png: ''}, outBlob = {jpg: null, png: null};
+function exportCanvas(fmt){
+  // JPG: flatten onto a solid background (no transparency) — accepted everywhere
+  if(fmt === 'png') return scv;
+  const c = document.createElement('canvas'); c.width = scv.width; c.height = scv.height;
+  const g = c.getContext('2d');
+  g.fillStyle = ({pink: '#ffe3ec', sky: '#dff1ff'})[ST.bg] || '#ffffff';
+  g.fillRect(0, 0, c.width, c.height); g.drawImage(scv, 0, 0);
+  return c;
+}
+function dataURLtoBlob(u){
+  const [h, b64] = u.split(','), mime = h.match(/:(.*?);/)[1];
+  const bin = atob(b64), arr = new Uint8Array(bin.length);
+  for(let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], {type: mime});
+}
+function prepareOutputs(){
+  // built synchronously from data URLs so the share call stays inside the tap gesture
+  outURL.png = scv.toDataURL('image/png');
+  outURL.jpg = exportCanvas('jpg').toDataURL('image/jpeg', 0.95);
+  outBlob.png = dataURLtoBlob(outURL.png);
+  outBlob.jpg = dataURLtoBlob(outURL.jpg);
+}
+function fileName(fmt){ return 'photopuzzle_' + stamp() + (fmt === 'png' ? '.png' : '.jpg'); }
+function setFmt(f){
+  saveFmt = f;
+  [...$('fmtBox').children].forEach(b => b.classList.toggle('on', b.dataset.f === f));
+  $('choiceImg').src = outURL[f];
+}
+[...document.querySelectorAll('#fmtBox .opt')].forEach(b => b.onclick = () => setFmt(b.dataset.f));
 function fallbackSave(){
-  if(lastURL) URL.revokeObjectURL(lastURL);
-  $('saveImg').src = scv.toDataURL('image/png');
+  $('saveImg').src = outURL[saveFmt] || scv.toDataURL('image/png');
   if(IS_ANDROID) $('saveHint').innerHTML = '이미지를 <b>길게 눌러</b> <b>\'이미지 다운로드\'</b>를 선택하세요.<br>갤러리의 다운로드 앨범에 저장돼요.';
   $('saveModal').classList.add('on');
 }
 function downloadSave(){
-  const name = 'photopuzzle_' + stamp() + '.png';
-  const url = lastBlob ? URL.createObjectURL(lastBlob) : scv.toDataURL('image/png');
-  const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
-  if(lastBlob) setTimeout(() => URL.revokeObjectURL(url), 4000);
-  toast('저장 완료! 갤러리의 "Download(다운로드)" 앨범에서 확인하세요');
+  const a = document.createElement('a');
+  a.href = outURL[saveFmt]; a.download = fileName(saveFmt);
+  document.body.appendChild(a); a.click(); a.remove();
+  toast(IS_ANDROID ? '저장 완료! 갤러리의 "Download(다운로드)" 앨범을 확인하세요' : '다운로드됨: 파일 앱 > 다운로드 폴더');
 }
-async function shareSticker(){
-  if(!lastBlob){ fallbackSave(); return; }
-  const file = new File([lastBlob], 'photopuzzle_' + stamp() + '.png', {type: 'image/png'});
-  if(navigator.canShare && navigator.share){
-    let ok = false; try{ ok = navigator.canShare({files: [file]}); }catch(_){}
-    if(ok){
-      try{ await navigator.share({files: [file]}); toast(IS_ANDROID ? '보내기 완료!' : '완료! 사진 앱이나 카톡에서 확인하세요'); return; }
-      catch(err){ if(err && err.name === 'AbortError') return; }
-    }
-  }
-  fallbackSave();
+function shareSticker(){
+  const mime = saveFmt === 'png' ? 'image/png' : 'image/jpeg';
+  let file;
+  try{ file = new File([outBlob[saveFmt]], fileName(saveFmt), {type: mime, lastModified: Date.now()}); }catch(e){ fallbackSave(); return; }
+  let ok = false;
+  try{ ok = !!(navigator.canShare && navigator.share && navigator.canShare({files: [file]})); }catch(_){}
+  if(!ok){ toast('이 브라우저는 공유를 지원하지 않아요. 길게 눌러 저장하세요'); fallbackSave(); return; }
+  navigator.share({files: [file]}).then(() => {
+    $('choiceModal').classList.remove('on');
+    toast('완료! 사진첩이나 카톡에서 확인하세요');
+  }).catch(err => {
+    if(err && err.name === 'AbortError') return;   // user closed the share sheet
+    toast('공유 실패(' + (err && err.name || '오류') + ') · 길게 눌러 저장하세요');
+    fallbackSave();
+  });
 }
 $('sSave').onclick = () => {
-  if(IS_ANDROID){ $('choiceImg').src = scv.toDataURL('image/png'); $('choiceModal').classList.add('on'); return; }
-  shareSticker();
+  prepareOutputs(); setFmt(saveFmt);
+  $('cSave').style.display = IS_IOS ? 'none' : '';
+  $('choiceModal').classList.add('on');
 };
-$('cSave').onclick = () => { downloadSave(); $('choiceModal').classList.remove('on'); };
-$('cShare').onclick = () => { $('choiceModal').classList.remove('on'); shareSticker(); };
+$('cShare').onclick = () => shareSticker();
+$('cSave').onclick = () => downloadSave();
 $('cClose').onclick = () => $('choiceModal').classList.remove('on');
 $('saveClose').onclick = () => $('saveModal').classList.remove('on');
 
