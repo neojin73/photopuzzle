@@ -151,6 +151,7 @@ input[type=range]{width:100%;accent-color:var(--pink)}
 
     <button class="btn" id="startBtn" disabled>🧩 퍼즐 시작하기</button>
     <div class="rec" id="rec"></div>
+    <div class="rec" id="ver" style="opacity:.6;font-size:12px"></div>
   </div>
 </section>
 
@@ -250,6 +251,13 @@ input[type=range]{width:100%;accent-color:var(--pink)}
 </div>
 
 <div class="toast" id="toast"></div>
+<div id="inappBar" style="display:none;position:fixed;left:0;right:0;top:0;z-index:60;padding:calc(10px + var(--sat)) 14px 12px;background:#3b3054;color:#fff;font-size:14px;line-height:1.45;box-shadow:0 6px 20px #0003">
+  <div id="inappMsg">카카오톡 등 앱 안의 브라우저에서는 <b>사진 저장과 AI 필터가 동작하지 않아요.</b></div>
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <button id="inappOpen" style="flex:1;height:38px;border-radius:12px;background:#ff7aa2;color:#fff;font-size:15px">크롬/사파리로 열기</button>
+    <button id="inappClose" style="height:38px;padding:0 14px;border-radius:12px;background:#ffffff26;color:#fff;font-size:14px">닫기</button>
+  </div>
+</div>
 
 <script>
 (() => {
@@ -260,6 +268,8 @@ const UA = navigator.userAgent || '';
 const IS_ANDROID = /Android/i.test(UA);
 const IS_IOS = /iPhone|iPad|iPod/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const STANDALONE = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+const APP_VER = 'v5 (2026-11-23)';
+const IN_APP = /KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|FB_IAB|Line\/|DaumApps|everytimeApp|; wv\)/i.test(UA);
 const buzz = p => { try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} };
 const store = {
   get(k, d){ try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } },
@@ -770,7 +780,8 @@ async function runAnime(){
     g.putImageData(id, 0, 0);
     fCache.anime = c;
   }catch(e){
-    toast('AI 변환을 할 수 없어요. 인터넷 연결을 확인해 주세요');
+    console.error(e);
+    toast(IN_APP ? '앱 안 브라우저에서는 AI가 안 돼요. 크롬/사파리로 열어주세요' : 'AI 변환 실패: ai 폴더가 올라가 있는지, 인터넷 연결을 확인해 주세요');
     if(ST.filter === 'anime'){ ST.filter = 'none'; buildControls(); }
   }finally{
     busy.classList.remove('on'); aiRunning = false; drawSticker();
@@ -995,6 +1006,7 @@ function shareSticker(){
   });
 }
 $('sSave').onclick = () => {
+  if(IN_APP){ $('inappBar').style.display = 'block'; toast('카카오톡 안에서는 저장이 안 돼요. 크롬/사파리로 열어주세요'); return; }
   prepareOutputs(); setFmt(saveFmt);
   $('cSave').style.display = IS_IOS ? 'none' : '';
   $('choiceModal').classList.add('on');
@@ -1003,6 +1015,22 @@ $('cShare').onclick = () => shareSticker();
 $('cSave').onclick = () => downloadSave();
 $('cClose').onclick = () => $('choiceModal').classList.remove('on');
 $('saveClose').onclick = () => $('saveModal').classList.remove('on');
+
+/* ---- escape in-app browsers (KakaoTalk etc.) — downloads, Web Share and AI don't work there ---- */
+function openExternal(){
+  const url = location.href.split('#')[0];
+  if(/KAKAOTALK/i.test(UA)) location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url);
+  else if(IS_ANDROID) location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(url) + ';end';
+  else toast('오른쪽 아래 메뉴에서 "Safari로 열기"를 눌러주세요');
+}
+$('ver').textContent = '버전 ' + APP_VER;
+if(IN_APP && window.top === window.self && /^https?:/.test(location.protocol)){
+  $('inappBar').style.display = 'block';
+  if(IS_IOS && !/KAKAOTALK/i.test(UA)) $('inappMsg').innerHTML += '<br>메뉴(⋯)에서 <b>Safari로 열기</b>를 눌러주세요.';
+  $('inappOpen').onclick = openExternal;
+  $('inappClose').onclick = () => $('inappBar').style.display = 'none';
+  if(/KAKAOTALK/i.test(UA)) setTimeout(openExternal, 300);  // auto-jump out of KakaoTalk
+}
 
 /* install helper */
 (function(){
@@ -1025,7 +1053,16 @@ window.__pp = {solve(){ pieces.forEach(p => { if(!p.locked){ p.locked = true; p.
 /* service worker (offline) */
 try{
   if('serviceWorker' in navigator && window.isSecureContext && window.top === window.self){
-    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => r.update()).catch(() => {});
+      // reload only when an OLD version was controlling the page and nothing is in progress
+      const hadOld = !!navigator.serviceWorker.controller; let reloaded = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if(!hadOld || reloaded) return; reloaded = true;
+        if(!srcImg && document.getElementById('home').classList.contains('on')) location.reload();
+        else toast('새 버전이 준비됐어요. 앱을 다시 열면 적용돼요');
+      });
+    });
   }
 }catch(e){}
 })();
